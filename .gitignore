@@ -22,3 +22,8 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+
+# Text files I use for planning at the top level
+potential_plans.txt
+todo.txt
