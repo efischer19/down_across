@@ -1,3 +1,74 @@
-Hello, World!
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Down-Across, a simple word game</title>
+        <style>
+        * {
+        }
+        body {
+            color: #4C413E;
+            background-color: #F5F2E5;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+        table.board {
+            width: 85%;
+            margin-left: 5%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            box-sizing: border-box;
+        }
+        .board caption {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        .board td {
+            width: 6%;
+            border: 1px solid #ccc;
+        }
+        .board td:after {
+            content: '';
+            display: block;
+            margin-top: 100%;
+        }
+        </style>
+    </head>
+    <body>
+        <table class="board">
+            <caption>Game Board</caption>
+        </table>
+    </body>
+</html>
 
-Welcome to the future home of DownAcross!
+<script language="javascript">
+var ASCII_A = 'A'.charCodeAt(0);
+function generateBoard(size) {
+    // there should only be one board
+    var board = document.getElementsByClassName("board")[0];
+    var row_element = document.createElement('tr');
+    var row_html = "\t<td style='border: none;'></td>\n";
+    for (col = 0; col < size; col++) {
+        row_html += "\t<th scope='col'>";
+        
+        //Assumes size <= 26
+        row_html += String.fromCharCode(ASCII_A + col);
+        row_html += "</th>\n";
+    }
+    row_element.innerHTML = row_html;
+    board.appendChild(row_element);
+    for (row = 0; row < size; row++) {
+        row_element = document.createElement('tr');
+        row_html = "\t<th scope='row'>" + (row + 1) + "</th>\n";
+        for (col = 0; col < size; col++) {
+            row_class = "row-" + row;
+            col_class = "col-" + String.fromCharCode(ASCII_A + col);
+            row_html += "\t<td class='" + row_class + " " + col_class + "'></td>\n"; 
+        }
+        row_element.innerHTML = row_html;
+        board.appendChild(row_element);
+    }
+}
+window.onload += generateBoard(13);
+</script>
