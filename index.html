@@ -1,12 +1,9 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">
         <title>Down-Across, a simple word game</title>
         <style>
-        * {
-        }
         body {
             color: #4C413E;
             background-color: #F5F2E5;
@@ -15,7 +12,8 @@
         }
         table.board {
             width: 85%;
-            margin-left: 5%;
+            max-width: 90vh;
+            margin: auto;
             border-collapse: collapse;
             table-layout: fixed;
             box-sizing: border-box;
@@ -25,7 +23,7 @@
             font-weight: bold;
         }
         .board td {
-            width: 6%;
+            width: 8%;
             border: 1px solid #ccc;
         }
         .board td:after {
@@ -33,12 +31,22 @@
             display: block;
             margin-top: 100%;
         }
+        @media only screen and (orientation: landscape) {
+            /* If extra horizontal space is available, let's use it*/
+            table.board {
+                width: 45%;
+                margin-left: 5%;
+            }
+        }
         </style>
     </head>
     <body>
         <table class="board">
             <caption>Game Board</caption>
         </table>
+        <div class="rack"></div>
+        <div class="scores"></div>
+        <div class="history"></div>
     </body>
 </html>
 
@@ -70,5 +78,5 @@ function generateBoard(size) {
         board.appendChild(row_element);
     }
 }
-window.onload += generateBoard(13);
+window.onload += generateBoard(9);
 </script>
