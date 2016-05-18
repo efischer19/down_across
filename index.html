@@ -4,23 +4,29 @@
         <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">
         <title>Down-Across, a simple word game</title>
         <style>
+        h1 {
+            font-size: 2em;
+            font-weight: bold;
+            margin: auto;
+        }
         body {
             color: #4C413E;
             background-color: #F5F2E5;
             line-height: 1.6;
             font-size: 18px;
+            text-align: center;
         }
-        table.board {
+        .board {
             width: 85%;
             max-width: 90vh;
             margin: auto;
+            box-sizing: border-box;
+            float: left;
+        }
+        .board table {
+            width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            box-sizing: border-box;
-        }
-        .board caption {
-            font-size: 2em;
-            font-weight: bold;
         }
         .board td {
             width: 8%;
@@ -31,36 +37,62 @@
             display: block;
             margin-top: 100%;
         }
+        .player_area {
+            width: 85%;
+            margin: auto;
+            box-sizing: border-box;
+            float: left;
+        }
+        .rack {
+            border-style: solid;
+            border-radius: 25px;
+            padding: 20px;
+            margin: 25px;
+            display: inline-block;
+        }
+        .rack .tile {
+            display: inline;
+        }
         @media only screen and (orientation: landscape) {
             /* If extra horizontal space is available, let's use it*/
-            table.board {
+            .board {
                 width: 45%;
+                margin-left: 5%;
+            }
+            .player_area {
+                width: 40%;
                 margin-left: 5%;
             }
         }
         </style>
     </head>
     <body>
-        <table class="board">
-            <caption>Game Board</caption>
-        </table>
-        <div class="rack"></div>
-        <div class="scores"></div>
-        <div class="history"></div>
+        <div class="board">
+            <h1>Game Board</h1>
+            <table></table>
+        </div>
+        <div class="player_area">
+            <h1>Your Tiles</h1>
+            <div class="rack"></div>
+        </div>
+        <!--div class="scores"></div>
+        <div class="history"></div-->
     </body>
 </html>
 
 <script language="javascript">
 var ASCII_A = 'A'.charCodeAt(0);
+var BOARD_SIZE = 9;
+var RACK_SIZE = 5;
 function generateBoard(size) {
     // there should only be one board
-    var board = document.getElementsByClassName("board")[0];
+    var board = document.querySelector(".board table");
     var row_element = document.createElement('tr');
     var row_html = "\t<td style='border: none;'></td>\n";
     for (col = 0; col < size; col++) {
         row_html += "\t<th scope='col'>";
         
-        //Assumes size <= 26
+        // Assumes size <= 26
         row_html += String.fromCharCode(ASCII_A + col);
         row_html += "</th>\n";
     }
@@ -78,5 +110,35 @@ function generateBoard(size) {
         board.appendChild(row_element);
     }
 }
-window.onload += generateBoard(9);
+function fillRack() {
+    var rack = document.querySelector(".player_area .rack");
+    for (rack_count = rack.childElementCount; rack_count <= RACK_SIZE; rack_count++) {
+        // just random letters for now, will eventually simulate "draw from pile" properly
+        var new_letter = String.fromCharCode(Math.floor((Math.random() * 26)) + ASCII_A);
+        rack.appendChild(buildTile(new_letter));
+    }
+}
+function buildTile(letter) {
+    var tile = document.createElement('div');
+    tile.className = "tile"
+    tile.innerHTML = letter.toUpperCase();
+    return tile;
+}
+
+/*
+function allowDrop(e) {
+    e.preventDefault();
+}
+function drag(e) {
+    e.dataTransfer.setData("tile", ev.target.value);
+}
+function drop(e) {
+    e.preventDefault();
+    var data = e.dataTransfer.getData("tile");
+    e.target.appendChild(buildTile(data));
+}
+*/
+
+window.onload += generateBoard(BOARD_SIZE);
+window.onload += fillRack();
 </script>
