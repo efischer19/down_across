@@ -48,15 +48,22 @@
             border-radius: 25px;
             padding: 20px;
         }
+        .tile:focus {
+            color: #4C413E;
+            background-color: #F5F2E5;
+            box-shadow: 0 0 0 .2vw #4C413E inset;
+            outline: none;
+        }
         .tile {
             display: inline-block;
+            box-sizing: border-box;
             color: #F5F2E5;
             background-color: #4C413E;
             width: 3vw;
             height: 3vw;
             line-height: 3vw;
-            margin: 5px;
-            font-size: 1.8em;
+            margin: .5vw;
+            font-size: 3vw;
             font-family: monospace;
         }
         @media only screen and (orientation: landscape) {
@@ -120,6 +127,13 @@ function generateBoard(size) {
             cell.classname = row_class + ' ' + col_class
             cell.ondrop = function() {drop(event);}
             cell.ondragover = function() {allowDrop(event);}
+            cell.onmousedown = function() {
+                if (this.value) {return;}
+                cur_tile = inFlightTile();
+                if (cur_tile) {
+                    playTile(cur_tile.innerHTML, this);
+                }
+            }
             row_element.appendChild(cell);
         }
         board.appendChild(row_element);
@@ -128,34 +142,76 @@ function generateBoard(size) {
 
 function fillRack() {
     var rack = document.querySelector('.player_area .rack');
-    for (rack_count = rack.childElementCount; rack_count <= RACK_SIZE; rack_count++) {
+    for (rack_count = rack.childElementCount; rack_count < RACK_SIZE; rack_count++) {
         // just random letters for now, will eventually simulate 'draw from pile' properly
         var new_letter = String.fromCharCode(Math.floor((Math.random() * 26)) + ASCII_A);
         rack.appendChild(buildTile(new_letter));
     }
 }
 
-function buildTile(letter) {
+function buildTile(letter, can_play=true) {
     var tile = document.createElement('div');
     tile.className = 'tile'
     tile.innerHTML = letter.toUpperCase();
-    tile.draggable = true;
-    tile.ondragstart = function() {drag(event);}
+    if (can_play) {
+        tile.draggable = true;
+        tile.ondragstart = function() {drag(event);}
+        tile.tabIndex = 0;
+        tile.onclick = function() {
+            if (this.inFlight) {
+                this.blur();
+            }
+            else {
+                this.focus();
+                this.inFlight = true;
+            }
+        };
+        tile.onblur = function() {
+            delete this.inFlight
+        };
+    }
     return tile;
+}
+
+function inFlightTile() {
+    var rack = document.querySelector('.player_area .rack');
+    for (i = 0; i < rack.childNodes.length; i++) {
+        if (rack.childNodes[i].inFlight) {
+            return rack.childNodes[i];
+        }
+    }
+}
+
+function playTile(tile_value, square) {
+    square.appendChild(buildTile(tile_value, can_play=false));
+    square.value = tile_value;
+    replaceInFlightTile()
+}
+
+function replaceInFlightTile() {
+    var rack = document.querySelector('.player_area .rack');
+    var new_letter = String.fromCharCode(Math.floor((Math.random() * 26)) + ASCII_A);
+    rack.replaceChild(buildTile(new_letter), inFlightTile());
+}
+
+function drag(e) {
+    e.dataTransfer.setData('tile', e.target.innerHTML);
+    e.target.inFlight = true;
 }
 
 function allowDrop(e) {
     e.preventDefault();
 }
 
-function drag(e) {
-    e.dataTransfer.setData('tile', e.target.innerHTML);
-}
-
 function drop(e) {
     e.preventDefault();
-    var data = e.dataTransfer.getData('tile');
-    e.target.appendChild(buildTile(data));
+    if (e.target.parentElement.value === undefined) {
+        var data = e.dataTransfer.getData('tile');
+        playTile(data, e.target);
+    }
+    else {
+        inFlightTile().blur()
+    }
 }
 
 window.onload += generateBoard(BOARD_SIZE);
