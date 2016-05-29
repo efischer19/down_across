@@ -1,82 +1,219 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset='utf-8' name='viewport' content='width=device-width, initial-scale=1'>
         <title>Down-Across, a simple word game</title>
         <style>
+        h1 {
+            font-size: 2em;
+            font-weight: bold;
+            margin: auto;
+        }
         body {
             color: #4C413E;
             background-color: #F5F2E5;
             line-height: 1.6;
             font-size: 18px;
+            text-align: center;
         }
-        table.board {
+        .board {
             width: 85%;
             max-width: 90vh;
             margin: auto;
+            box-sizing: border-box;
+            float: left;
+        }
+        .board table {
+            width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            box-sizing: border-box;
-        }
-        .board caption {
-            font-size: 2em;
-            font-weight: bold;
         }
         .board td {
             width: 8%;
             border: 1px solid #ccc;
         }
-        .board td:after {
+        .board td:empty:after {
             content: '';
             display: block;
             margin-top: 100%;
         }
+        .player_area {
+            width: 85%;
+            margin: auto;
+            box-sizing: border-box;
+            float: left;
+        }
+        .rack {
+            border-style: solid;
+            border-radius: 25px;
+            padding: 20px;
+        }
+        .tile:focus {
+            color: #4C413E;
+            background-color: #F5F2E5;
+            box-shadow: 0 0 0 .2vw #4C413E inset;
+            outline: none;
+        }
+        .tile {
+            display: inline-block;
+            box-sizing: border-box;
+            color: #F5F2E5;
+            background-color: #4C413E;
+            width: 3vw;
+            height: 3vw;
+            line-height: 3vw;
+            margin: .5vw;
+            font-size: 3vw;
+            font-family: monospace;
+        }
         @media only screen and (orientation: landscape) {
             /* If extra horizontal space is available, let's use it*/
-            table.board {
+            .board {
                 width: 45%;
+                margin-left: 5%;
+            }
+            .player_area {
+                width: 40%;
                 margin-left: 5%;
             }
         }
         </style>
     </head>
     <body>
-        <table class="board">
-            <caption>Game Board</caption>
-        </table>
-        <div class="rack"></div>
-        <div class="scores"></div>
-        <div class="history"></div>
+        <div class='board'>
+            <h1>Game Board</h1>
+            <table></table>
+        </div>
+        <div class='player_area'>
+            <h1>Your Tiles</h1>
+            <div class='rack'></div>
+        </div>
+        <!--div class='scores'></div>
+        <div class='history'></div-->
     </body>
 </html>
 
-<script language="javascript">
+<script language='javascript'>
 var ASCII_A = 'A'.charCodeAt(0);
+var BOARD_SIZE = 9;
+var RACK_SIZE = 5;
+
 function generateBoard(size) {
     // there should only be one board
-    var board = document.getElementsByClassName("board")[0];
-    var row_element = document.createElement('tr');
-    var row_html = "\t<td style='border: none;'></td>\n";
+    var board = document.querySelector('.board table');
+    var top_row = document.createElement('tr');
+    var first_cell = document.createElement('td');
+    first_cell.setAttribute('style', 'border: none');
+    top_row.appendChild(first_cell)
     for (col = 0; col < size; col++) {
-        row_html += "\t<th scope='col'>";
+        col_header = document.createElement('th');
+        col_header.setAttribute('scope', 'col');
         
-        //Assumes size <= 26
-        row_html += String.fromCharCode(ASCII_A + col);
-        row_html += "</th>\n";
+        // Assumes size <= 26
+        col_header.innerHTML = String.fromCharCode(ASCII_A + col);
+        top_row.appendChild(col_header);
     }
-    row_element.innerHTML = row_html;
-    board.appendChild(row_element);
+    board.appendChild(top_row);
     for (row = 0; row < size; row++) {
         row_element = document.createElement('tr');
-        row_html = "\t<th scope='row'>" + (row + 1) + "</th>\n";
+        row_header = document.createElement('th');
+        row_header.setAttribute('scope', 'row');
+        row_header.innerHTML = row + 1;
+        row_element.appendChild(row_header);
         for (col = 0; col < size; col++) {
-            row_class = "row-" + row;
-            col_class = "col-" + String.fromCharCode(ASCII_A + col);
-            row_html += "\t<td class='" + row_class + " " + col_class + "'></td>\n"; 
+            row_class = 'row-' + row;
+            col_class = 'col-' + String.fromCharCode(ASCII_A + col);
+            cell = document.createElement('td');
+            cell.classname = row_class + ' ' + col_class
+            cell.ondrop = function() {drop(event);}
+            cell.ondragover = function() {allowDrop(event);}
+            cell.onmousedown = function() {
+                if (this.value) {return;}
+                cur_tile = inFlightTile();
+                if (cur_tile) {
+                    playTile(cur_tile.innerHTML, this);
+                }
+            }
+            row_element.appendChild(cell);
         }
-        row_element.innerHTML = row_html;
         board.appendChild(row_element);
     }
 }
-window.onload += generateBoard(9);
+
+function fillRack() {
+    var rack = document.querySelector('.player_area .rack');
+    for (rack_count = rack.childElementCount; rack_count < RACK_SIZE; rack_count++) {
+        // just random letters for now, will eventually simulate 'draw from pile' properly
+        var new_letter = String.fromCharCode(Math.floor((Math.random() * 26)) + ASCII_A);
+        rack.appendChild(buildTile(new_letter));
+    }
+}
+
+function buildTile(letter, can_play=true) {
+    var tile = document.createElement('div');
+    tile.className = 'tile'
+    tile.innerHTML = letter.toUpperCase();
+    if (can_play) {
+        tile.draggable = true;
+        tile.ondragstart = function() {drag(event);}
+        tile.tabIndex = 0;
+        tile.onclick = function() {
+            if (this.inFlight) {
+                this.blur();
+            }
+            else {
+                this.focus();
+                this.inFlight = true;
+            }
+        };
+        tile.onblur = function() {
+            delete this.inFlight
+        };
+    }
+    return tile;
+}
+
+function inFlightTile() {
+    var rack = document.querySelector('.player_area .rack');
+    for (i = 0; i < rack.childNodes.length; i++) {
+        if (rack.childNodes[i].inFlight) {
+            return rack.childNodes[i];
+        }
+    }
+}
+
+function playTile(tile_value, square) {
+    square.appendChild(buildTile(tile_value, can_play=false));
+    square.value = tile_value;
+    replaceInFlightTile()
+}
+
+function replaceInFlightTile() {
+    var rack = document.querySelector('.player_area .rack');
+    var new_letter = String.fromCharCode(Math.floor((Math.random() * 26)) + ASCII_A);
+    rack.replaceChild(buildTile(new_letter), inFlightTile());
+}
+
+function drag(e) {
+    e.dataTransfer.setData('tile', e.target.innerHTML);
+    e.target.inFlight = true;
+}
+
+function allowDrop(e) {
+    e.preventDefault();
+}
+
+function drop(e) {
+    e.preventDefault();
+    if (e.target.parentElement.value === undefined) {
+        var data = e.dataTransfer.getData('tile');
+        playTile(data, e.target);
+    }
+    else {
+        inFlightTile().blur()
+    }
+}
+
+window.onload += generateBoard(BOARD_SIZE);
+window.onload += fillRack();
 </script>
